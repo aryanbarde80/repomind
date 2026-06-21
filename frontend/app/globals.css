@@ -25,6 +25,11 @@ body {
   background: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-sans);
+  background-image:
+          radial-gradient(ellipse 800px 500px at 15% -10%, rgba(232, 163, 61, 0.08), transparent),
+          radial-gradient(ellipse 600px 400px at 90% 10%, rgba(94, 234, 212, 0.05), transparent),
+          repeating-linear-gradient(0deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 28px);
+  background-attachment: fixed;
 }
 
 button {
@@ -135,6 +140,42 @@ textarea {
 }
 .stepActive {
   animation: stepLight 0.4s ease-out forwards;
+}
+
+input:focus,
+textarea:focus {
+  border-color: var(--color-amber) !important;
+  box-shadow: 0 0 0 3px var(--color-amber-soft);
+}
+
+@keyframes shimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+.goldShimmer {
+  background: linear-gradient(90deg, #c9882a, #f3c969, #e8a33d, #c9882a);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 4s linear infinite;
+}
+
+.featureCard {
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.featureCard:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-amber);
+  box-shadow: 0 8px 24px rgba(232, 163, 61, 0.12);
+}
+
+@keyframes heroFadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.heroFadeUp {
+  animation: heroFadeUp 0.5s ease-out both;
 }
 
 @media (prefers-reduced-motion: reduce) {

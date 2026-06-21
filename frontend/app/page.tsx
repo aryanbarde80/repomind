@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth, useClerk } from "@clerk/nextjs";
 import FileTree, { TraceTarget } from "./components/FileTree";
 import { trackEvent } from "./components/PostHogProvider";
 
@@ -17,7 +17,8 @@ type Citation = { file_path: string; start_line: number; end_line: number };
 type Message = { role: "user" | "assistant"; content: string; citations?: Citation[] };
 
 export default function Home() {
-  const { getToken } = useAuth();
+  const { getToken, isSignedIn } = useAuth();
+  const { openSignIn } = useClerk();
 
   async function authHeaders(): Promise<Record<string, string>> {
     const token = await getToken().catch(() => null);
@@ -70,6 +71,10 @@ export default function Home() {
 
   async function handleIngest() {
     if (!repoUrl.trim()) return;
+    if (!isSignedIn) {
+      openSignIn();
+      return;
+    }
     setIngestStatus("processing");
     setIngestError(null);
     setRepoId(null);
@@ -216,7 +221,27 @@ export default function Home() {
                       ))}
                     </div>
                 ) : (
-                    <p style={styles.emptyText}>Index a repo to start asking questions about it.</p>
+                    <div className="heroFadeUp" style={styles.hero}>
+                      <div style={styles.heroEyebrow}>Open source · Free to try</div>
+                      <h1 style={styles.heroTitle}>Understand any codebase in minutes.</h1>
+                      <p style={styles.heroSubtext}>
+                        Paste a public GitHub repo on the left. RepoMind reads every file, builds a
+                        searchable map of it, and answers your questions with the exact file and lines
+                        behind every answer — so you can verify it, not just trust it.
+                      </p>
+                      <div style={styles.featureGrid}>
+                        {[
+                          { label: "Visual file tree", desc: "Browse the full repo structure, not just isolated snippets." },
+                          { label: "Cited answers", desc: "Every response points to the exact files and lines it used." },
+                          { label: "Instant indexing", desc: "Clone, chunk, and embed a repo in under a minute." },
+                        ].map((f, i) => (
+                            <div key={f.label} className="featureCard heroFadeUp" style={{ ...styles.featureCard, animationDelay: `${0.1 + i * 0.08}s` }}>
+                              <div style={styles.featureLabel}>{f.label}</div>
+                              <div style={styles.featureDesc}>{f.desc}</div>
+                            </div>
+                        ))}
+                      </div>
+                    </div>
                 )}
               </div>
           )}
@@ -344,8 +369,22 @@ const styles: Record<string, React.CSSProperties> = {
     textTransform: "uppercase",
     letterSpacing: 1,
   },
-  emptyState: { flex: 1, display: "flex", alignItems: "center", justifyContent: "center" },
+  emptyState: { flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 32 },
   emptyText: { color: "var(--color-text-muted)", fontSize: 14 },
+  hero: { maxWidth: 640, textAlign: "center" },
+  heroEyebrow: {
+    fontSize: 11, letterSpacing: 1.5, textTransform: "uppercase",
+    color: "var(--color-amber)", fontWeight: 600, marginBottom: 14,
+  },
+  heroTitle: { fontSize: 30, fontWeight: 600, margin: "0 0 14px 0", lineHeight: 1.25 },
+  heroSubtext: { fontSize: 14, color: "var(--color-text-muted)", lineHeight: 1.7, margin: "0 0 32px 0" },
+  featureGrid: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, textAlign: "left" },
+  featureCard: {
+    border: "1px solid var(--color-border)", borderRadius: 8, padding: 16,
+    background: "var(--color-surface)",
+  },
+  featureLabel: { fontSize: 13, fontWeight: 600, marginBottom: 6, color: "var(--color-text)" },
+  featureDesc: { fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.5 },
   quickPrompts: { display: "flex", flexDirection: "column", gap: 10, alignItems: "stretch", maxWidth: 420 },
   quickPromptButton: {
     background: "var(--color-surface)",
