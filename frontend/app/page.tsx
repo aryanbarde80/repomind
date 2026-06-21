@@ -569,7 +569,7 @@ function MessageBubble({
   return (
     <div className="fadeUp" style={{ display: "flex", flexDirection: "column", alignItems: isUser ? "flex-end" : "flex-start", gap: 8 }}>
       {/* Role label */}
-      <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-dim)", paddingX: 4 }}>
+      <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-dim)", padding: "0 4px" }}>
         {isUser ? "You" : "RepoMind"}
       </div>
       <div style={{
