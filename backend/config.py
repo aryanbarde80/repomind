@@ -43,5 +43,5 @@ IGNORED_FILENAME_SUBSTRINGS = ("mock", ".min.")  # e.g. mock.json, data.mock.jso
 # Guardrails — without these, anyone can paste a huge repo and burn your
 # Groq/embedding quota for free. Tune these based on what your free tier allows.
 MAX_FILES_PER_REPO = 800
-MAX_CHUNKS_PER_REPO = 1500
+MAX_CHUNKS_PER_REPO = int(os.getenv("MAX_CHUNKS_PER_REPO", "1500"))
 

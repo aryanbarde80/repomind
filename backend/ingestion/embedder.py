@@ -25,13 +25,14 @@ def _get_model() -> SentenceTransformer:
         _model = SentenceTransformer(EMBEDDING_MODEL_NAME)
     return _model
 
-
-def embed_texts(texts: list[str]) -> list[list[float]]:
-    """Batch-embeds a list of strings. Returns one vector per input string."""
+def embed_texts(texts: list[str], batch_size: int = 32) -> list[list[float]]:
     model = _get_model()
-    vectors = model.encode(texts, show_progress_bar=False, convert_to_numpy=True)
-    return vectors.tolist()
-
+    all_vectors: list[list[float]] = []
+    for i in range(0, len(texts), batch_size):
+        batch = texts[i : i + batch_size]
+        vectors = model.encode(batch, show_progress_bar=False, convert_to_numpy=True)
+        all_vectors.extend(vectors.tolist())
+    return all_vectors
 
 def embed_one(text: str) -> list[float]:
     return embed_texts([text])[0]
