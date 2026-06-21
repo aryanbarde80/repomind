@@ -29,7 +29,7 @@ const TOUR_STEPS: TourStep[] = [
   {
     id: "ask",
     title: "Step 2 — Ask anything",
-    body: "Ask in plain English: "Where are the API routes defined?", "Explain the authentication flow", "Are there any potential race conditions?" — anything you'd ask a senior dev who knows the whole codebase.",
+    body: "Ask in plain English: 'Where are the API routes defined?', 'Explain the authentication flow', 'Are there any potential race conditions?' — anything you'd ask a senior dev who knows the whole codebase.",
     icon: "◈",
     position: "center",
   },
