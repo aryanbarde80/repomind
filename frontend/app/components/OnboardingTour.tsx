@@ -7,8 +7,6 @@ type TourStep = {
   title: string;
   body: string;
   icon: string;
-  position: "center" | "bottom-left" | "bottom-right" | "top-right";
-  highlight?: string; // CSS selector to highlight (future use)
 };
 
 const TOUR_STEPS: TourStep[] = [
@@ -17,87 +15,73 @@ const TOUR_STEPS: TourStep[] = [
     title: "Welcome to RepoMind",
     body: "Understand any GitHub codebase in minutes. Paste a repo URL, ask natural language questions, and get answers cited down to the exact file and line.",
     icon: "✦",
-    position: "center",
   },
   {
     id: "index",
     title: "Step 1 — Index a repository",
-    body: "Paste any public GitHub URL into the sidebar. RepoMind will clone it, chunk every file into semantic segments, and build a searchable vector index — usually in under 30 seconds.",
+    body: "Paste any public GitHub URL into the sidebar on the left. RepoMind clones it, chunks every file into semantic segments, and builds a searchable vector index — usually under 30 seconds.",
     icon: "⬡",
-    position: "bottom-left",
   },
   {
     id: "ask",
     title: "Step 2 — Ask anything",
-    body: "Ask in plain English: 'Where are the API routes defined?', 'Explain the authentication flow', 'Are there any potential race conditions?' — anything you'd ask a senior dev who knows the whole codebase.",
+    body: "Ask in plain English: 'Where are the API routes defined?', 'Explain the auth flow', 'Any race conditions?' — anything you would ask a senior dev who knows the whole codebase.",
     icon: "◈",
-    position: "center",
   },
   {
     id: "citations",
     title: "Step 3 — Trace every answer",
-    body: "Every response surfaces the exact files and line ranges it reasoned from. Click any citation pill to jump straight to that file in the tree on the left. Verify, don't just trust.",
+    body: "Every response shows the exact files and line ranges it used. Click any citation pill to jump straight to that file in the tree. Verify, don't just trust.",
     icon: "⬟",
-    position: "bottom-right",
   },
   {
     id: "done",
-    title: "You're ready to explore",
-    body: "Paste a repo URL in the sidebar to begin. We've pre-loaded some quick prompts to help you get started. Happy exploring.",
+    title: "You are ready to explore",
+    body: "Paste a GitHub repo URL in the sidebar to get started. Quick prompts will appear once your repo is indexed. Happy exploring.",
     icon: "◎",
-    position: "center",
   },
 ];
 
 const STORAGE_KEY = "repomind_tour_v1";
 
-interface Props {
-  onComplete: () => void;
-}
-
-export default function OnboardingTour({ onComplete }: Props) {
+export default function OnboardingTour({ onComplete }: { onComplete: () => void }) {
   const [step, setStep] = useState(0);
-  const [exiting, setExiting] = useState(false);
+  const [animState, setAnimState] = useState<"in" | "out">("in");
+
   const current = TOUR_STEPS[step];
   const isLast = step === TOUR_STEPS.length - 1;
 
+  const goTo = useCallback((next: number) => {
+    setAnimState("out");
+    setTimeout(() => {
+      setStep(next);
+      setAnimState("in");
+    }, 180);
+  }, []);
+
   const advance = useCallback(() => {
     if (isLast) {
-      handleComplete();
+      localStorage.setItem(STORAGE_KEY, "done");
+      onComplete();
     } else {
-      setExiting(true);
-      setTimeout(() => {
-        setStep((s) => s + 1);
-        setExiting(false);
-      }, 200);
+      goTo(step + 1);
     }
-  }, [isLast]);
+  }, [isLast, step, goTo, onComplete]);
 
-  const handleComplete = useCallback(() => {
+  const handleSkip = useCallback(() => {
     localStorage.setItem(STORAGE_KEY, "done");
     onComplete();
   }, [onComplete]);
 
-  const handleSkip = useCallback(() => {
-    handleComplete();
-  }, [handleComplete]);
-
-  // Keyboard nav
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Enter" || e.key === "ArrowRight") advance();
+      if (e.key === "ArrowLeft" && step > 0) goTo(step - 1);
       if (e.key === "Escape") handleSkip();
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [advance, handleSkip]);
-
-  const positions: Record<string, React.CSSProperties> = {
-    center: { left: "50%", top: "50%", transform: "translate(-50%, -50%)" },
-    "bottom-left": { left: "340px", bottom: "80px" },
-    "bottom-right": { right: "32px", bottom: "80px" },
-    "top-right": { right: "32px", top: "80px" },
-  };
+  }, [advance, handleSkip, goTo, step]);
 
   return (
     <div
@@ -105,87 +89,86 @@ export default function OnboardingTour({ onComplete }: Props) {
         position: "fixed",
         inset: 0,
         zIndex: 9999,
-        background: "rgba(8, 11, 18, 0.88)",
-        backdropFilter: "blur(8px)",
-        WebkitBackdropFilter: "blur(8px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "rgba(8, 11, 18, 0.85)",
+        backdropFilter: "blur(10px)",
+        WebkitBackdropFilter: "blur(10px)",
+        padding: 20,
       }}
-      className="fadeIn"
+      onClick={(e) => { if (e.target === e.currentTarget) handleSkip(); }}
     >
-      {/* Decorative ambient orbs */}
+      {/* Ambient orbs */}
       <div style={{
-        position: "absolute", top: "20%", left: "15%",
-        width: 300, height: 300,
-        background: "radial-gradient(circle, rgba(245,158,11,0.07) 0%, transparent 70%)",
+        position: "absolute", top: "15%", left: "10%",
+        width: 400, height: 400, borderRadius: "50%",
+        background: "radial-gradient(circle, rgba(245,158,11,0.06) 0%, transparent 70%)",
         pointerEvents: "none",
       }} />
       <div style={{
-        position: "absolute", bottom: "20%", right: "20%",
-        width: 250, height: 250,
+        position: "absolute", bottom: "15%", right: "10%",
+        width: 300, height: 300, borderRadius: "50%",
         background: "radial-gradient(circle, rgba(34,211,238,0.05) 0%, transparent 70%)",
         pointerEvents: "none",
       }} />
 
-      {/* Step card */}
+      {/* Modal card */}
       <div
         key={step}
-        className="tour-step-card"
         style={{
-          position: "absolute",
-          ...positions[current.position],
-          width: 460,
+          width: "100%",
+          maxWidth: 480,
           background: "linear-gradient(145deg, #0d1117 0%, #111827 100%)",
-          border: "1px solid rgba(245,158,11,0.25)",
-          borderRadius: 20,
-          padding: "36px 36px 28px",
-          boxShadow: "0 24px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(245,158,11,0.12), inset 0 1px 0 rgba(255,255,255,0.04)",
-          opacity: exiting ? 0 : 1,
-          transform: exiting ? "scale(0.96) translateY(6px)" : undefined,
-          transition: "opacity 0.18s ease, transform 0.18s ease",
+          border: "1px solid rgba(245,158,11,0.2)",
+          borderRadius: 24,
+          padding: "40px 40px 32px",
+          boxShadow: "0 32px 100px rgba(0,0,0,0.8), 0 0 0 1px rgba(245,158,11,0.08), inset 0 1px 0 rgba(255,255,255,0.04)",
+          opacity: animState === "in" ? 1 : 0,
+          transform: animState === "in" ? "scale(1) translateY(0)" : "scale(0.97) translateY(8px)",
+          transition: "opacity 0.2s ease, transform 0.2s ease",
+          position: "relative",
         }}
       >
-        {/* Progress bar */}
-        <div style={{ display: "flex", gap: 5, marginBottom: 28 }}>
+        {/* Progress dots */}
+        <div style={{ display: "flex", gap: 6, marginBottom: 32, alignItems: "center" }}>
           {TOUR_STEPS.map((_, i) => (
-            <div
+            <button
               key={i}
+              onClick={() => i < step ? goTo(i) : undefined}
               style={{
-                flex: 1,
-                height: 3,
+                width: i === step ? 24 : 7,
+                height: 7,
                 borderRadius: 10,
-                background: i <= step ? "var(--amber)" : "var(--border)",
-                transition: "background 0.3s ease",
-                overflow: "hidden",
+                background: i === step ? "var(--amber)" : i < step ? "rgba(245,158,11,0.4)" : "var(--border)",
+                border: "none",
+                cursor: i < step ? "pointer" : "default",
+                padding: 0,
+                transition: "all 0.3s cubic-bezier(.22,1,.36,1)",
+                flexShrink: 0,
               }}
-            >
-              {i === step && (
-                <div className="progress-fill" style={{ height: "100%" }} />
-              )}
-            </div>
+            />
           ))}
+          <span style={{
+            marginLeft: "auto",
+            fontSize: 11, color: "var(--text-dim)", fontWeight: 500,
+            fontFamily: "var(--font-mono)",
+          }}>
+            {step + 1} / {TOUR_STEPS.length}
+          </span>
         </div>
 
         {/* Icon */}
         <div style={{
-          width: 52, height: 52,
-          borderRadius: 14,
+          width: 56, height: 56, borderRadius: 16,
           background: "var(--amber-soft)",
-          border: "1px solid rgba(245,158,11,0.2)",
+          border: "1px solid rgba(245,158,11,0.25)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 24,
-          color: "var(--amber)",
-          marginBottom: 20,
-          boxShadow: "0 0 20px rgba(245,158,11,0.1)",
-        }} className="tour-highlight">
-          {current.icon}
-        </div>
-
-        {/* Step count */}
-        <div style={{
-          fontSize: 11, fontWeight: 600, letterSpacing: "0.1em",
-          textTransform: "uppercase", color: "var(--amber)",
-          marginBottom: 8, opacity: 0.8,
+          fontSize: 26, color: "var(--amber)",
+          marginBottom: 24,
+          boxShadow: "0 0 24px rgba(245,158,11,0.12)",
         }}>
-          {step + 1} / {TOUR_STEPS.length}
+          {current.icon}
         </div>
 
         {/* Title */}
@@ -199,8 +182,8 @@ export default function OnboardingTour({ onComplete }: Props) {
 
         {/* Body */}
         <p style={{
-          fontSize: 14, color: "var(--text-muted)", lineHeight: 1.75,
-          marginBottom: 32,
+          fontSize: 14, color: "var(--text-muted)", lineHeight: 1.8,
+          marginBottom: 36,
         }}>
           {current.body}
         </p>
@@ -221,35 +204,43 @@ export default function OnboardingTour({ onComplete }: Props) {
             Skip tour
           </button>
 
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             {step > 0 && (
               <button
-                onClick={() => { setExiting(true); setTimeout(() => { setStep(s => s - 1); setExiting(false); }, 180); }}
+                onClick={() => goTo(step - 1)}
                 className="btn btn-ghost"
-                style={{ padding: "8px 16px", fontSize: 13 }}
+                style={{ padding: "9px 18px", fontSize: 13 }}
               >
-                Back
+                ← Back
               </button>
             )}
             <button
               onClick={advance}
               className="btn btn-primary"
-              style={{ padding: "10px 24px", fontSize: 14 }}
+              style={{ padding: "10px 26px", fontSize: 14 }}
             >
               {isLast ? "Get started →" : "Continue →"}
             </button>
           </div>
         </div>
 
-        {/* Keyboard hint */}
+        {/* Keyboard hints */}
         <div style={{
-          marginTop: 20, paddingTop: 16,
+          marginTop: 24, paddingTop: 16,
           borderTop: "1px solid var(--border)",
           display: "flex", gap: 16,
           color: "var(--text-dim)", fontSize: 11,
         }}>
-          <span><kbd style={{ fontFamily: "var(--font-mono)", fontSize: 10, background: "var(--surface-high)", border: "1px solid var(--border)", borderRadius: 4, padding: "1px 5px" }}>Enter</kbd> continue</span>
-          <span><kbd style={{ fontFamily: "var(--font-mono)", fontSize: 10, background: "var(--surface-high)", border: "1px solid var(--border)", borderRadius: 4, padding: "1px 5px" }}>Esc</kbd> skip</span>
+          {[["Enter", "continue"], ["←→", "navigate"], ["Esc", "skip"]].map(([key, label]) => (
+            <span key={key}>
+              <kbd style={{
+                fontFamily: "var(--font-mono)", fontSize: 10,
+                background: "var(--surface-high)", border: "1px solid var(--border)",
+                borderRadius: 4, padding: "1px 6px", marginRight: 4,
+              }}>{key}</kbd>
+              {label}
+            </span>
+          ))}
         </div>
       </div>
     </div>
